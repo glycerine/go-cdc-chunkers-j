@@ -1,4 +1,4 @@
-module github.com/PlakarLabs/go-cdc-chunkers
+module github.com/PlakarKorp/go-cdc-chunkers
 
 go 1.20
 

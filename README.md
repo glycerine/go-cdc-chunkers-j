@@ -22,7 +22,7 @@ Content-Defined Chunking (CDC) algorithms are used in data deduplication and bac
 
 ## Installation
 ```sh
-go get github.com/PlakarLabs/go-cdc-chunkers
+go get github.com/PlakarKorp/go-cdc-chunkers
 ```
 
 
@@ -64,24 +64,24 @@ for multiple implementations available as well as multiple methods of consumptio
 ```
 goos: darwin
 goarch: amd64
-pkg: github.com/PlakarLabs/go-cdc-chunkers/tests
+pkg: github.com/PlakarKorp/go-cdc-chunkers/tests
 cpu: VirtualApple @ 2.50GHz
 Benchmark_Restic_Rabin_Next-8                          1        1749383125 ns/op         613.78 MB/s          1301 chunks
 Benchmark_Askeladdk_FastCDC_Copy-8                     2         513506770 ns/op        2091.00 MB/s        105327 chunks
 Benchmark_Jotfs_FastCDC_Next-8                         3         434035306 ns/op        2473.86 MB/s          1725 chunks
 Benchmark_Tigerwill90_FastCDC_Split-8                  3         344989056 ns/op        3112.39 MB/s          2013 chunks
 Benchmark_Mhofmann_FastCDC_Next-8                      2         516671625 ns/op        2078.19 MB/s          1718 chunks
-Benchmark_PlakarLabs_FastCDC_Copy-8                    8         138843406 ns/op        7733.47 MB/s          3647 chunks
-Benchmark_PlakarLabs_FastCDC_Split-8                   8         131869604 ns/op        8142.45 MB/s          3647 chunks
-Benchmark_PlakarLabs_FastCDC_Next-8                    8         131754844 ns/op        8149.54 MB/s          3647 chunks
-Benchmark_PlakarLabs_UltraCDC_Copy-8                  15          75377942 ns/op        14244.78 MB/s         4096 chunks
-Benchmark_PlakarLabs_UltraCDC_Split-8                 15          79355653 ns/op        13530.75 MB/s         4096 chunks
-Benchmark_PlakarLabs_UltraCDC_Next-8                  15          74150153 ns/op        14480.64 MB/s         4096 chunks
-Benchmark_PlakarLabs_JC_Copy-8                        14          79943033 ns/op        13431.34 MB/s         4033 chunks
-Benchmark_PlakarLabs_JC_Split-8                       14          78178872 ns/op        13734.42 MB/s         4033 chunks
-Benchmark_PlakarLabs_JC_Next-8                        14          78148342 ns/op        13739.79 MB/s         4033 chunks
+Benchmark_PlakarKorp_FastCDC_Copy-8                    8         138843406 ns/op        7733.47 MB/s          3647 chunks
+Benchmark_PlakarKorp_FastCDC_Split-8                   8         131869604 ns/op        8142.45 MB/s          3647 chunks
+Benchmark_PlakarKorp_FastCDC_Next-8                    8         131754844 ns/op        8149.54 MB/s          3647 chunks
+Benchmark_PlakarKorp_UltraCDC_Copy-8                  15          75377942 ns/op        14244.78 MB/s         4096 chunks
+Benchmark_PlakarKorp_UltraCDC_Split-8                 15          79355653 ns/op        13530.75 MB/s         4096 chunks
+Benchmark_PlakarKorp_UltraCDC_Next-8                  15          74150153 ns/op        14480.64 MB/s         4096 chunks
+Benchmark_PlakarKorp_JC_Copy-8                        14          79943033 ns/op        13431.34 MB/s         4033 chunks
+Benchmark_PlakarKorp_JC_Split-8                       14          78178872 ns/op        13734.42 MB/s         4033 chunks
+Benchmark_PlakarKorp_JC_Next-8                        14          78148342 ns/op        13739.79 MB/s         4033 chunks
 PASS
-ok      github.com/PlakarLabs/go-cdc-chunkers/tests     75.089s
+ok      github.com/PlakarKorp/go-cdc-chunkers/tests     75.089s
 ```
 
 ## Contributing

@@ -10,9 +10,9 @@ import (
 	"os"
 	"runtime/pprof"
 
-	chunkers "github.com/PlakarLabs/go-cdc-chunkers"
-	_ "github.com/PlakarLabs/go-cdc-chunkers/chunkers/fastcdc"
-	_ "github.com/PlakarLabs/go-cdc-chunkers/chunkers/ultracdc"
+	chunkers "github.com/PlakarKorp/go-cdc-chunkers"
+	_ "github.com/PlakarKorp/go-cdc-chunkers/chunkers/fastcdc"
+	_ "github.com/PlakarKorp/go-cdc-chunkers/chunkers/ultracdc"
 )
 
 const (

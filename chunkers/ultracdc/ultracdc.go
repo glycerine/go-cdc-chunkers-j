@@ -21,7 +21,7 @@ import (
 	"math/bits"
 	"unsafe"
 
-	chunkers "github.com/PlakarLabs/go-cdc-chunkers"
+	chunkers "github.com/PlakarKorp/go-cdc-chunkers"
 )
 
 func init() {

@@ -9,10 +9,10 @@ import (
 	"testing"
 
 	mhofmann "codeberg.org/mhofmann/fastcdc"
-	chunkers "github.com/PlakarLabs/go-cdc-chunkers"
-	_ "github.com/PlakarLabs/go-cdc-chunkers/chunkers/fastcdc"
-	_ "github.com/PlakarLabs/go-cdc-chunkers/chunkers/jc"
-	_ "github.com/PlakarLabs/go-cdc-chunkers/chunkers/ultracdc"
+	chunkers "github.com/PlakarKorp/go-cdc-chunkers"
+	_ "github.com/PlakarKorp/go-cdc-chunkers/chunkers/fastcdc"
+	_ "github.com/PlakarKorp/go-cdc-chunkers/chunkers/jc"
+	_ "github.com/PlakarKorp/go-cdc-chunkers/chunkers/ultracdc"
 	askeladdk "github.com/askeladdk/fastcdc"
 	jotfs "github.com/jotfs/fastcdc-go"
 	restic "github.com/restic/chunker"
@@ -493,7 +493,7 @@ func Benchmark_Mhofmann_FastCDC_Next(b *testing.B) {
 	b.ReportMetric(float64(nchunks)/float64(b.N), "chunks")
 }
 
-func Benchmark_PlakarLabs_FastCDC_Copy(b *testing.B) {
+func Benchmark_PlakarKorp_FastCDC_Copy(b *testing.B) {
 	r := bytes.NewReader(rb)
 	b.SetBytes(int64(r.Len()))
 	b.ResetTimer()
@@ -521,7 +521,7 @@ func Benchmark_PlakarLabs_FastCDC_Copy(b *testing.B) {
 	b.ReportMetric(float64(nchunks)/float64(b.N), "chunks")
 }
 
-func Benchmark_PlakarLabs_FastCDC_Split(b *testing.B) {
+func Benchmark_PlakarKorp_FastCDC_Split(b *testing.B) {
 	r := bytes.NewReader(rb)
 	b.SetBytes(int64(r.Len()))
 	b.ResetTimer()
@@ -552,7 +552,7 @@ func Benchmark_PlakarLabs_FastCDC_Split(b *testing.B) {
 	b.ReportMetric(float64(nchunks)/float64(b.N), "chunks")
 }
 
-func Benchmark_PlakarLabs_FastCDC_Next(b *testing.B) {
+func Benchmark_PlakarKorp_FastCDC_Next(b *testing.B) {
 	r := bytes.NewReader(rb)
 	b.SetBytes(int64(r.Len()))
 	b.ResetTimer()
@@ -578,7 +578,7 @@ func Benchmark_PlakarLabs_FastCDC_Next(b *testing.B) {
 	b.ReportMetric(float64(nchunks)/float64(b.N), "chunks")
 }
 
-func Benchmark_PlakarLabs_UltraCDC_Copy(b *testing.B) {
+func Benchmark_PlakarKorp_UltraCDC_Copy(b *testing.B) {
 	r := bytes.NewReader(rb)
 	b.SetBytes(int64(r.Len()))
 	b.ResetTimer()
@@ -606,7 +606,7 @@ func Benchmark_PlakarLabs_UltraCDC_Copy(b *testing.B) {
 	b.ReportMetric(float64(nchunks)/float64(b.N), "chunks")
 }
 
-func Benchmark_PlakarLabs_UltraCDC_Split(b *testing.B) {
+func Benchmark_PlakarKorp_UltraCDC_Split(b *testing.B) {
 	r := bytes.NewReader(rb)
 	b.SetBytes(int64(r.Len()))
 	b.ResetTimer()
@@ -637,7 +637,7 @@ func Benchmark_PlakarLabs_UltraCDC_Split(b *testing.B) {
 	b.ReportMetric(float64(nchunks)/float64(b.N), "chunks")
 }
 
-func Benchmark_PlakarLabs_UltraCDC_Next(b *testing.B) {
+func Benchmark_PlakarKorp_UltraCDC_Next(b *testing.B) {
 	r := bytes.NewReader(rb)
 	b.SetBytes(int64(r.Len()))
 
@@ -663,7 +663,7 @@ func Benchmark_PlakarLabs_UltraCDC_Next(b *testing.B) {
 	b.ReportMetric(float64(nchunks)/float64(b.N), "chunks")
 }
 
-func Benchmark_PlakarLabs_JC_Copy(b *testing.B) {
+func Benchmark_PlakarKorp_JC_Copy(b *testing.B) {
 	r := bytes.NewReader(rb)
 	b.SetBytes(int64(r.Len()))
 	b.ResetTimer()
@@ -691,7 +691,7 @@ func Benchmark_PlakarLabs_JC_Copy(b *testing.B) {
 	b.ReportMetric(float64(nchunks)/float64(b.N), "chunks")
 }
 
-func Benchmark_PlakarLabs_JC_Split(b *testing.B) {
+func Benchmark_PlakarKorp_JC_Split(b *testing.B) {
 	r := bytes.NewReader(rb)
 	b.SetBytes(int64(r.Len()))
 	b.ResetTimer()
@@ -722,7 +722,7 @@ func Benchmark_PlakarLabs_JC_Split(b *testing.B) {
 	b.ReportMetric(float64(nchunks)/float64(b.N), "chunks")
 }
 
-func Benchmark_PlakarLabs_JC_Next(b *testing.B) {
+func Benchmark_PlakarKorp_JC_Next(b *testing.B) {
 	r := bytes.NewReader(rb)
 	b.SetBytes(int64(r.Len()))
 	b.ResetTimer()
