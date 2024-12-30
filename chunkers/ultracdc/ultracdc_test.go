@@ -51,14 +51,14 @@ func Test_Splits_Not_Changed(t *testing.T) {
 		}
 	*/
 
-	// how many change if we alter the data?
+	// how many change if we alter the data? just by prepending 2 bytes.
 	differ := 0
 	data = append([]byte{0x39, 0x46}, data...)
 	cuts2, hashmap2 := getCuts(data, u, opt)
 	for j, cut := range cuts2 {
 		if cuts[j] != cut {
 			differ++
-			fmt.Printf("cut %v differs: %v vs %v   (off by %v)\n", j, cut, cuts[j], cut-cuts[j])
+			//fmt.Printf("cut %v differs: %v vs %v   (off by %v)\n", j, cut, cuts[j], cut-cuts[j])
 		}
 	}
 	fmt.Printf("after pre-pending 2 bytes, the number of cuts that differ = %v; out of %v\n", differ, len(cuts))
@@ -195,6 +195,7 @@ func getByte(x uint64, i int) byte {
 	// return byte((x >> ((7 - i) * 8)) & 0xFF)
 }
 
+/*
 func TestByteGet(t *testing.T) {
 	x := uint64(0x1122334455667788)
 
@@ -211,6 +212,7 @@ func TestByteGet(t *testing.T) {
 		fmt.Printf("Byte %d: %02x\n", i, getByte(x, i))
 	}
 }
+*/
 
 func Blake3OfBytes(by []byte) string {
 	h := blake3.New(64, nil)
