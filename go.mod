@@ -1,6 +1,6 @@
 module github.com/PlakarKorp/go-cdc-chunkers
 
-go 1.23.4
+go 1.23
 
 require (
 	codeberg.org/mhofmann/fastcdc v1.0.0
