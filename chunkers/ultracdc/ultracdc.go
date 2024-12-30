@@ -43,7 +43,7 @@ func (c *UltraCDC) DefaultOptions() *chunkers.ChunkerOpts {
 	return &chunkers.ChunkerOpts{
 		MinSize:    2 * 1024,
 		MaxSize:    64 * 1024,
-		NormalSize: 8 * 1024,
+		NormalSize: (2+8) * 1024,
 	}
 }
 
