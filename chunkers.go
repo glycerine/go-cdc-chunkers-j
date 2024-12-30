@@ -31,7 +31,7 @@ type ChunkerOpts struct {
 type ChunkerImplementation interface {
 	DefaultOptions() *ChunkerOpts
 	Validate(*ChunkerOpts) error
-	Algorithm(*ChunkerOpts, []byte, int, int) int
+	Algorithm(*ChunkerOpts, []byte, int) int
 }
 
 type Chunker struct {
@@ -109,7 +109,7 @@ func (chunker *Chunker) Next() ([]byte, error) {
 		return nil, io.EOF
 	}
 
-	cutpoint := chunker.implementation.Algorithm(chunker.options, data, n, 0)
+	cutpoint := chunker.implementation.Algorithm(chunker.options, data, n)
 	chunker.cutpoint = cutpoint
 
 	if cutpoint < chunker.minSize {

@@ -17,11 +17,14 @@
 package ultracdc
 
 import (
+	"encoding/hex"
 	"fmt"
 	mathrand2 "math/rand/v2"
 	"testing"
 
 	chunkers "github.com/PlakarKorp/go-cdc-chunkers"
+	"lukechampine.com/blake3"
+	//"github.com/PlakarKorp/go-cdc-chunkers/chunkers/fastcdc"
 )
 
 // Sanity check that refactoring ultracdc.go has
@@ -34,9 +37,11 @@ func Test_Splits_Not_Changed(t *testing.T) {
 	data := make([]byte, 1<<20+1)
 	generator.Read(data)
 
+	//data = append([]byte{0x39, 0x46}, data...)
 	u := newUltraCDC().(*UltraCDC)
+	//u := &fastcdc.FastCDC{}
 	opt := u.DefaultOptions()
-	cuts := getCuts(data, u, opt)
+	cuts, hashmap := getCuts(data, u, opt)
 
 	/*
 		for j, cut := range cuts {
@@ -49,7 +54,7 @@ func Test_Splits_Not_Changed(t *testing.T) {
 	// how many change if we alter the data?
 	differ := 0
 	data = append([]byte{0x39, 0x46}, data...)
-	cuts2 := getCuts(data, u, opt)
+	cuts2, hashmap2 := getCuts(data, u, opt)
 	for j, cut := range cuts2 {
 		if cuts[j] != cut {
 			differ++
@@ -57,14 +62,23 @@ func Test_Splits_Not_Changed(t *testing.T) {
 		}
 	}
 	fmt.Printf("after pre-pending 2 bytes, the number of cuts that differ = %v; out of %v\n", differ, len(cuts))
+
+	matchingHashes := 0
+	for hash0 := range hashmap {
+		if hashmap2[hash0] {
+			matchingHashes++
+		}
+	}
+	fmt.Printf("matchingHashes = %v\n", matchingHashes)
 }
 
-func getCuts(data []byte, u *UltraCDC, opt *chunkers.ChunkerOpts) (cuts []int) {
+func getCuts(data []byte, u chunkers.ChunkerImplementation, opt *chunkers.ChunkerOpts) (cuts []int, hashmap map[string]bool) {
 
+	hashmap = make(map[string]bool)
 	last := 0
 	j := 0
 	for len(data) > opt.MinSize {
-		offset := u.Algorithm(opt, data, len(data), j)
+		offset := u.Algorithm(opt, data, len(data))
 		if offset == 0 {
 			break
 		}
@@ -72,6 +86,7 @@ func getCuts(data []byte, u *UltraCDC, opt *chunkers.ChunkerOpts) (cuts []int) {
 		cuts = append(cuts, cut)
 		last = cut
 		j++
+		hashmap[Blake3OfBytes(data[:offset])] = true
 		data = data[offset:]
 	}
 	return
@@ -91,7 +106,7 @@ func regenExpected() {
 	j := 0
 	fmt.Printf("var expectedCuts = []int{\n")
 	for len(data) > opt.MinSize {
-		offset := u.Algorithm(opt, data, len(data), j)
+		offset := u.Algorithm(opt, data, len(data))
 		cut := last + offset
 		cuts = append(cuts, cut)
 		last = cut
@@ -195,4 +210,12 @@ func TestByteGet(t *testing.T) {
 	for i := 0; i < 8; i++ {
 		fmt.Printf("Byte %d: %02x\n", i, getByte(x, i))
 	}
+}
+
+func Blake3OfBytes(by []byte) string {
+	h := blake3.New(64, nil)
+	h.Write(by)
+	//return h.Sum(nil)
+	enchex := hex.EncodeToString(h.Sum(nil))
+	return enchex
 }

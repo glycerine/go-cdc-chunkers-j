@@ -67,7 +67,7 @@ func (c *UltraCDC) Validate(options *chunkers.ChunkerOpts) error {
 	return nil
 }
 
-func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n, pass int) int {
+func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n int) int {
 	if n > len(data) {
 		panic(fmt.Sprintf("len(data) == %v, but must be >= n == %v", len(data), n))
 	}
@@ -104,11 +104,13 @@ func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n, pass
 	k := i / 8
 	outBufWin := src[k]
 	dist := bits.OnesCount64(outBufWin ^ Pattern)
-	i += 8
+	i += 8 // i is the first byte of the incomming inBufWin data
 	k++
 
 	for i < n-8 {
 		if i == NormalSize {
+			// we've gotten to the midpoint without issuing a cut,
+			// make it easier.
 			mask = MaskL
 		}
 
@@ -120,7 +122,7 @@ func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n, pass
 		if (outBufWin ^ inBufWin) == 0 {
 			cnt++
 			if cnt == LEST {
-				fmt.Printf("on pass = %v, cnt = %v == LEST = %v, returning i+8=%v\n", pass, cnt, LEST, i+8) // never seen??
+				// on random (high-entropy) data, we don't expect this to fire.
 				return i + 8
 			}
 			i += 8
@@ -131,48 +133,45 @@ func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n, pass
 		cnt = 0
 		for j := 0; j < 8; j++ {
 			if (uint64(dist) & mask) == 0 {
+				pass := -1
 				fmt.Printf("on pass = %v, dist: %v (%b) & mask: %v (%b) == %v, returning i+8=%v\n", pass, dist, dist, mask, mask, uint64(dist)&mask, i+8)
 				return i + 8
 			}
 			// words:          outBufWin        inBufWin
-			// byte index:    [0 1 2 3 4 5 6 7][0 1 2 3 4 5 6 7] if big-endian.
-			// byte index:    [7 6 5 4 3 2 1 0][7 6 5 4 3 2 1 0] if little-endian.
+			// byte index:    [0 1 2 3 4 5 6 7][0 1 2 3 4 5 6 7]
 			// slide by one:     [               ]
 			// means           ^ has to go out; ^ has to go in.
 
-			// little endian:
-			inByte := byte(inBufWin >> (j << 3))
-			outByte := byte(outBufWin >> (j << 3))
-			// big endian: (to view the []byte stream as continuously numbered)
-			//inByte := byte(inBufWin >> ((7 - j) << 3))
-			//outByte := byte(outBufWin >> ((7 - j) << 3))
+			// equvalent to below
+			// inByte := byte(inBufWin >> (j << 3))
+			// outByte := byte(outBufWin >> (j << 3))
 
-			if i+j+8 >= len(data) {
-				// crashing when i(56920) + j(3) + 8 = 56931 >= len(data)=56931
-				fmt.Printf("crashing when i(%v) + j(%v) + 8 = %v >= len(data)=%v\n", i, j, i+j+8, len(data))
-				return 0
-			}
-			outByte2 := data[i+j-8]
-			inByte2 := data[i+j]
-			if outByte != outByte2 || inByte != inByte2 {
-				fmt.Printf("inByte = %x ; outByte = %x; data[i+j-8]=%x should be outByte; data[i+j]=%x should be in byte; i=%v; j=%v; k=%v; k*8=%v; n=%v; pass=%v; outBufWin='%x'; inBufWin='%x'; outByte2=%x; inByte2=%x\n", inByte, outByte, data[i+j-8], data[i+j], i, j, k, k*8, n, pass, outBufWin, inBufWin, outByte2, inByte2)
-				for k, v := range data[(i - 8) : i+j+8+1] {
-					fmt.Printf("data[%v] = %x\n", k+i-8, v)
-				}
-				panic("why not?")
-			} else {
-				//fmt.Printf("bytes agree at i =%v; j=%v\n", i, j)
-			}
-			/*
-				if debug < 5 {
-					fmt.Printf("inByte = %v ; outByte = %v; data[i+j]=%v should be outByte; data[i+j+8]=%v should be in byte; i=%v\n", inByte, outByte, data[i+j], data[i+j+8], i)
-				}
-				debug++
-			*/
+			// equivalently:
+			outByte := data[i+j-8]
+			inByte := data[i+j]
+
 			//dist = dist + uint64(hammingDistanceTable[outByte][inByte])
 			update := hammingDistanceTable[0xAA][inByte] - hammingDistanceTable[0xAA][outByte]
 			//fmt.Printf("on pass = %v, dist: %v -> %v\n", pass, dist, dist+update)
+
+			update2 := bits.OnesCount8(inByte^0xAA) - bits.OnesCount8(outByte^0xAA)
+			if update != update2 {
+				panic(fmt.Sprintf("update2=%v; update = %v", update2, update))
+			}
+
 			dist += update
+
+			// manually compute: yes, these agree: d2 and dist.
+			/*
+				d2 := 0
+				for z := i + j - 7; z <= i+j; z++ {
+					d2 += bits.OnesCount8(data[z] ^ 0xAA)
+				}
+				//fmt.Printf("i+j=%v -> dist = %v; dist2='%v'\n", i+j, dist, d2)
+				if d2 != dist {
+					panic("where?")
+				}
+			*/
 		}
 		outBufWin = inBufWin
 		i += 8
@@ -181,5 +180,3 @@ func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n, pass
 
 	return n
 }
-
-var debug int = 0
