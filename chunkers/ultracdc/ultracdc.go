@@ -41,8 +41,8 @@ func newUltraCDC() chunkers.ChunkerImplementation {
 
 func (c *UltraCDC) DefaultOptions() *chunkers.ChunkerOpts {
 	return &chunkers.ChunkerOpts{
-		MinSize: 2 * 1024,
-		MaxSize: 64 * 1024,
+		MinSize:    2 * 1024,
+		MaxSize:    64 * 1024,
 		NormalSize: 8 * 1024,
 	}
 }
@@ -58,7 +58,6 @@ func (c *UltraCDC) Validate(options *chunkers.ChunkerOpts) error {
 		return errMaxSize
 	}
 	return nil
-}
 }
 
 func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n int) int {
