@@ -107,13 +107,13 @@ func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n, pass
 	i += 8
 	k++
 
-	for i < n {
+	for i < n-8 {
 		if i == NormalSize {
 			mask = MaskL
 		}
 
 		if k >= len(src) {
-			fmt.Printf("crashing on i = %v\n", i)
+			fmt.Printf("crashing on i = %v; k(%v) >= len(src)=%v; len(data)=%v; n=%v; len(data)/8=%v\n", i, k, len(src), len(data), n, float64(len(data))/8)
 			return 0
 		}
 		inBufWin := src[k]
@@ -143,10 +143,32 @@ func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n, pass
 			// little endian:
 			inByte := byte(inBufWin >> (j << 3))
 			outByte := byte(outBufWin >> (j << 3))
-			// big endian:
+			// big endian: (to view the []byte stream as continuously numbered)
 			//inByte := byte(inBufWin >> ((7 - j) << 3))
 			//outByte := byte(outBufWin >> ((7 - j) << 3))
 
+			if i+j+8 >= len(data) {
+				// crashing when i(56920) + j(3) + 8 = 56931 >= len(data)=56931
+				fmt.Printf("crashing when i(%v) + j(%v) + 8 = %v >= len(data)=%v\n", i, j, i+j+8, len(data))
+				return 0
+			}
+			outByte2 := data[i+j-8]
+			inByte2 := data[i+j]
+			if outByte != outByte2 || inByte != inByte2 {
+				fmt.Printf("inByte = %x ; outByte = %x; data[i+j-8]=%x should be outByte; data[i+j]=%x should be in byte; i=%v; j=%v; k=%v; k*8=%v; n=%v; pass=%v; outBufWin='%x'; inBufWin='%x'; outByte2=%x; inByte2=%x\n", inByte, outByte, data[i+j-8], data[i+j], i, j, k, k*8, n, pass, outBufWin, inBufWin, outByte2, inByte2)
+				for k, v := range data[(i - 8) : i+j+8+1] {
+					fmt.Printf("data[%v] = %x\n", k+i-8, v)
+				}
+				panic("why not?")
+			} else {
+				//fmt.Printf("bytes agree at i =%v; j=%v\n", i, j)
+			}
+			/*
+				if debug < 5 {
+					fmt.Printf("inByte = %v ; outByte = %v; data[i+j]=%v should be outByte; data[i+j+8]=%v should be in byte; i=%v\n", inByte, outByte, data[i+j], data[i+j+8], i)
+				}
+				debug++
+			*/
 			//dist = dist + uint64(hammingDistanceTable[outByte][inByte])
 			update := hammingDistanceTable[0xAA][inByte] - hammingDistanceTable[0xAA][outByte]
 			//fmt.Printf("on pass = %v, dist: %v -> %v\n", pass, dist, dist+update)
@@ -159,3 +181,5 @@ func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n, pass
 
 	return n
 }
+
+var debug int = 0
