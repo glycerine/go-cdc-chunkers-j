@@ -18,8 +18,8 @@ package ultracdc
 
 import (
 	"errors"
+	"fmt"
 	"math/bits"
-	"unsafe"
 
 	chunkers "github.com/PlakarKorp/go-cdc-chunkers"
 )
@@ -68,7 +68,12 @@ func (c *UltraCDC) Validate(options *chunkers.ChunkerOpts) error {
 }
 
 func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n int) int {
-	src := (*uint64)(unsafe.Pointer(&data[0]))
+	if n > len(data) {
+		panic(fmt.Sprintf("len(data) == %v, but must be >= n == %v", len(data), n))
+	}
+
+	// isolate unsafe to unsafe.go file.
+	var src []uint64 = bytesToUint64(data)
 
 	const (
 		Pattern uint64 = 0xAAAAAAAAAAAAAAAA
@@ -93,22 +98,26 @@ func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n int) 
 		NormalSize = n
 	}
 
-	outBufWin := (*uint64)(unsafe.Pointer(uintptr(unsafe.Pointer(src)) + uintptr(i)))
-	dist := uint64(bits.OnesCount64(*outBufWin ^ Pattern))
+	// k is our index into src, now that src is []uint64
+	k := i / 8
+	outBufWin := src[k]
+	dist := uint64(bits.OnesCount64(outBufWin ^ Pattern))
 	i += 8
+	k++
 
 	for i < n {
 		if i == NormalSize {
 			mask = MaskL
 		}
 
-		inBufWin := (*uint64)(unsafe.Pointer(uintptr(unsafe.Pointer(src)) + uintptr(i)))
-		if (*outBufWin ^ *inBufWin) == 0 {
+		inBufWin := src[k]
+		if (outBufWin ^ inBufWin) == 0 {
 			cnt++
 			if cnt == LEST {
 				return i + 8
 			}
 			i += 8
+			k++
 			continue
 		}
 
@@ -117,12 +126,16 @@ func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n int) 
 			if (dist & mask) == 0 {
 				return i + 8
 			}
-			inByte := *(*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(inBufWin)) + uintptr(j)))
-			outByte := *(*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(outBufWin)) + uintptr(j)))
+
+			// avoid re-casting to []byte just to get inBufWin[j] out.
+			inByte := byte(inBufWin >> (j << 3))   // morally inBufWin[j], assuming big-endian.
+			outByte := byte(outBufWin >> (j << 3)) // morally outBufWin[j], assuming big-endian.
+
 			dist = dist + uint64(hammingDistanceTable[outByte][inByte])
 		}
 		outBufWin = inBufWin
 		i += 8
+		k++
 	}
 
 	return n
