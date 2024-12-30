@@ -28,8 +28,10 @@ func init() {
 	chunkers.Register("ultracdc", newUltraCDC)
 }
 
-var errMinSize = errors.New("MinSize is required and must be 64B <= MinSize <= 1GB")
-var errMaxSize = errors.New("MaxSize is required and must be 64B <= MaxSize <= 1GB")
+var ErrNormalSize = errors.New("NormalSize is required and must be 64B <= NormalSize <= 1GB")
+var ErrMinSize = errors.New("MinSize is required and must be 64B <= MinSize <= 1GB && MinSize < NormalSize")
+var ErrMaxSize = errors.New("MaxSize is required and must be 64B <= MaxSize <= 1GB && MaxSize > NormalSize")
+var ErrMinSizeNotMultipleOf8 = errors.New("MinSize must be evenly divisible by 8")
 
 type UltraCDC struct {
 }
@@ -40,17 +42,27 @@ func newUltraCDC() chunkers.ChunkerImplementation {
 
 func (c *UltraCDC) DefaultOptions() *chunkers.ChunkerOpts {
 	return &chunkers.ChunkerOpts{
-		MinSize: 2 * 1024,
-		MaxSize: 64 * 1024,
+		MinSize:    2 * 1024,
+		NormalSize: 8 * 1024,
+		MaxSize:    64 * 1024,
 	}
 }
 
 func (c *UltraCDC) Validate(options *chunkers.ChunkerOpts) error {
-	if options.MinSize < 64 || options.MinSize > 1024*1024*1024 {
-		return errMinSize
+	if options.MinSize%8 != 0 {
+		return ErrMinSizeNotMultipleOf8
 	}
-	if options.MaxSize < 64 || options.MaxSize > 1024*1024*1024 {
-		return errMaxSize
+	if options.NormalSize == 0 || options.NormalSize < 64 ||
+		options.NormalSize > 1024*1024*1024 {
+		return ErrNormalSize
+	}
+	if options.MinSize < 64 || options.MinSize > 1024*1024*1024 ||
+		options.MinSize >= options.NormalSize {
+		return ErrMinSize
+	}
+	if options.MaxSize < 64 || options.MaxSize > 1024*1024*1024 ||
+		options.MaxSize <= options.NormalSize {
+		return ErrMaxSize
 	}
 	return nil
 }

@@ -27,9 +27,9 @@ func init() {
 	chunkers.Register("fastcdc", newFastCDC)
 }
 
-var errNormalSize = errors.New("NormalSize is required and must be 64B <= NormalSize <= 1GB")
-var errMinSize = errors.New("MinSize is required and must be 64B <= MinSize <= 1GB && MinSize < NormalSize")
-var errMaxSize = errors.New("MaxSize is required and must be 64B <= MaxSize <= 1GB && MaxSize > NormalSize")
+var ErrNormalSize = errors.New("NormalSize is required and must be 64B <= NormalSize <= 1GB")
+var ErrMinSize = errors.New("MinSize is required and must be 64B <= MinSize <= 1GB && MinSize < NormalSize")
+var ErrMaxSize = errors.New("MaxSize is required and must be 64B <= MaxSize <= 1GB && MaxSize > NormalSize")
 
 type FastCDC struct {
 }
@@ -48,13 +48,13 @@ func (c *FastCDC) DefaultOptions() *chunkers.ChunkerOpts {
 
 func (c *FastCDC) Validate(options *chunkers.ChunkerOpts) error {
 	if options.NormalSize == 0 || options.NormalSize < 64 || options.NormalSize > 1024*1024*1024 {
-		return errNormalSize
+		return ErrNormalSize
 	}
 	if options.MinSize < 64 || options.MinSize > 1024*1024*1024 || options.MinSize >= options.NormalSize {
-		return errMinSize
+		return ErrMinSize
 	}
 	if options.MaxSize < 64 || options.MaxSize > 1024*1024*1024 || options.MaxSize <= options.NormalSize {
-		return errMaxSize
+		return ErrMaxSize
 	}
 	return nil
 }
