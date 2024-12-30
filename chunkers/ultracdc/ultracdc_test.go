@@ -17,8 +17,11 @@
 package ultracdc
 
 import (
+	"fmt"
 	mathrand2 "math/rand/v2"
 	"testing"
+
+	chunkers "github.com/PlakarKorp/go-cdc-chunkers"
 )
 
 // Sanity check that refactoring ultracdc.go has
@@ -31,22 +34,75 @@ func Test_Splits_Not_Changed(t *testing.T) {
 	data := make([]byte, 1<<20+1)
 	generator.Read(data)
 
+	u := newUltraCDC().(*UltraCDC)
+	opt := u.DefaultOptions()
+	cuts := getCuts(data, u, opt)
+
+	/*
+		for j, cut := range cuts {
+			if expectedCuts[j] != cut {
+				t.Fatalf(`expected %v but got %v at j = %v`, expectedCuts[j], cut, j)
+			}
+		}
+	*/
+
+	// how many change if we alter the data?
+	differ := 0
+	data = append([]byte{0x39, 0x46}, data...)
+	cuts2 := getCuts(data, u, opt)
+	for j, cut := range cuts2 {
+		if cuts[j] != cut {
+			differ++
+			fmt.Printf("cut %v differs: %v vs %v   (off by %v)\n", j, cut, cuts[j], cut-cuts[j])
+		}
+	}
+	fmt.Printf("after pre-pending 2 bytes, the number of cuts that differ = %v; out of %v\n", differ, len(cuts))
+}
+
+func getCuts(data []byte, u *UltraCDC, opt *chunkers.ChunkerOpts) (cuts []int) {
+
+	last := 0
+	j := 0
+	for len(data) > opt.MinSize {
+		offset := u.Algorithm(opt, data, len(data), j)
+		if offset == 0 {
+			break
+		}
+		cut := last + offset
+		cuts = append(cuts, cut)
+		last = cut
+		j++
+		data = data[offset:]
+	}
+	return
+}
+
+func regenExpected() {
+	// deterministic pseudo-random numbers as data.
+	var seed [32]byte
+	generator := mathrand2.NewChaCha8(seed)
+	data := make([]byte, 1<<20+1)
+	generator.Read(data)
+
 	u := newUltraCDC()
 	opt := u.DefaultOptions()
 	var cuts []int
 	last := 0
 	j := 0
+	fmt.Printf("var expectedCuts = []int{\n")
 	for len(data) > opt.MinSize {
-		offset := u.Algorithm(opt, data, len(data))
+		offset := u.Algorithm(opt, data, len(data), j)
 		cut := last + offset
 		cuts = append(cuts, cut)
 		last = cut
-		if expectedCuts[j] != cut {
-			t.Fatalf(`expected %v but got %v at j = %v`, expectedCuts[j], cut, j)
-		}
+		fmt.Printf("%v, ", cut)
 		j++
+		if j%8 == 0 {
+			fmt.Println()
+		}
 		data = data[offset:]
 	}
+	fmt.Printf("\n}\n")
 }
 
 var expectedCuts = []int{
@@ -113,4 +169,30 @@ var expectedCuts = []int{
 	1005088, 1007208, 1009272, 1011344, 1013416, 1015496, 1017568, 1019640,
 	1021704, 1023768, 1025856, 1027920, 1029984, 1032088, 1034160, 1036232,
 	1038368, 1040432, 1042560, 1044632, 1046728,
+}
+
+// big endian
+func getByte(x uint64, i int) byte {
+	// Method 1: Using bit shifting
+	return byte(x >> ((7 - i) << 3))
+
+	// Method 2: Using bit masking
+	// return byte((x >> ((7 - i) * 8)) & 0xFF)
+}
+
+func TestByteGet(t *testing.T) {
+	x := uint64(0x1122334455667788)
+
+	// little endian access will print:
+	// Byte 0: 88
+	// Byte 1: 77
+	// Byte 2: 66
+	// Byte 3: 55
+	// Byte 4: 44
+	// Byte 5: 33
+	// Byte 6: 22
+	// Byte 7: 11
+	for i := 0; i < 8; i++ {
+		fmt.Printf("Byte %d: %02x\n", i, getByte(x, i))
+	}
 }

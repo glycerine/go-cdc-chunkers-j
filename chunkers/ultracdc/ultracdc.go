@@ -67,7 +67,7 @@ func (c *UltraCDC) Validate(options *chunkers.ChunkerOpts) error {
 	return nil
 }
 
-func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n int) int {
+func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n, pass int) int {
 	if n > len(data) {
 		panic(fmt.Sprintf("len(data) == %v, but must be >= n == %v", len(data), n))
 	}
@@ -79,7 +79,9 @@ func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n int) 
 		Pattern uint64 = 0xAAAAAAAAAAAAAAAA
 		MaskS   uint64 = 0x2F
 		MaskL   uint64 = 0x2C
-		LEST    uint32 = 64
+
+		// Low Entropy String Threshold
+		LEST uint32 = 64
 	)
 	MinSize := options.MinSize
 	MaxSize := options.MaxSize
@@ -101,7 +103,7 @@ func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n int) 
 	// k is our index into src, now that src is []uint64
 	k := i / 8
 	outBufWin := src[k]
-	dist := uint64(bits.OnesCount64(outBufWin ^ Pattern))
+	dist := bits.OnesCount64(outBufWin ^ Pattern)
 	i += 8
 	k++
 
@@ -110,10 +112,15 @@ func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n int) 
 			mask = MaskL
 		}
 
+		if k >= len(src) {
+			fmt.Printf("crashing on i = %v\n", i)
+			return 0
+		}
 		inBufWin := src[k]
 		if (outBufWin ^ inBufWin) == 0 {
 			cnt++
 			if cnt == LEST {
+				fmt.Printf("on pass = %v, cnt = %v == LEST = %v, returning i+8=%v\n", pass, cnt, LEST, i+8) // never seen??
 				return i + 8
 			}
 			i += 8
@@ -123,15 +130,27 @@ func (c *UltraCDC) Algorithm(options *chunkers.ChunkerOpts, data []byte, n int) 
 
 		cnt = 0
 		for j := 0; j < 8; j++ {
-			if (dist & mask) == 0 {
+			if (uint64(dist) & mask) == 0 {
+				fmt.Printf("on pass = %v, dist: %v (%b) & mask: %v (%b) == %v, returning i+8=%v\n", pass, dist, dist, mask, mask, uint64(dist)&mask, i+8)
 				return i + 8
 			}
+			// words:          outBufWin        inBufWin
+			// byte index:    [0 1 2 3 4 5 6 7][0 1 2 3 4 5 6 7] if big-endian.
+			// byte index:    [7 6 5 4 3 2 1 0][7 6 5 4 3 2 1 0] if little-endian.
+			// slide by one:     [               ]
+			// means           ^ has to go out; ^ has to go in.
 
-			// avoid re-casting to []byte just to get inBufWin[j] out.
-			inByte := byte(inBufWin >> (j << 3))   // morally inBufWin[j], assuming big-endian.
-			outByte := byte(outBufWin >> (j << 3)) // morally outBufWin[j], assuming big-endian.
+			// little endian:
+			inByte := byte(inBufWin >> (j << 3))
+			outByte := byte(outBufWin >> (j << 3))
+			// big endian:
+			//inByte := byte(inBufWin >> ((7 - j) << 3))
+			//outByte := byte(outBufWin >> ((7 - j) << 3))
 
-			dist = dist + uint64(hammingDistanceTable[outByte][inByte])
+			//dist = dist + uint64(hammingDistanceTable[outByte][inByte])
+			update := hammingDistanceTable[0xAA][inByte] - hammingDistanceTable[0xAA][outByte]
+			//fmt.Printf("on pass = %v, dist: %v -> %v\n", pass, dist, dist+update)
+			dist += update
 		}
 		outBufWin = inBufWin
 		i += 8
